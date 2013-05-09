@@ -1,9 +1,9 @@
 --[[
 //////////////////////////////////////////////////////////////////////////
-// date ：2013-3-21
+// date : 2013-5-4
 // auth : macroli(idehong@gmail.com)
-// ver  : 1.05
-// desc : 常用工具类函数
+// ver  : 0.2
+// desc : demo
 //////////////////////////////////////////////////////////////////////////    
 --]]
 
@@ -15,24 +15,23 @@ local function MyAdd(a, b)
 	return  a + b 
 end	
 
-
-function TestAdd1()
+local function TestAdd1()
 	ltest.ASSERT_EQ(2, MyAdd(1, 1))
 end	
 
-function TestAdd2()
+local function TestAdd2()
 	ltest.ASSERT_EQ(1, MyAdd(2, 8)):print("ltest.ASSERT_EQ(1, MyAdd(2, 8))") 
 	ltest.EXCEPT_EQ(2, MyAdd(2, 8)):print("plugin info 2 + 8") 
 	ltest.ASSERT_EQ(3, MyAdd(2, 8)):print("plugin info 2 + 8") 
 end	
 
-function TestAdd3()
+local function TestAdd3()
 	ltest.EXCEPT_EQ(10, MyAdd(10, 20))
 	ltest.ASSERT_EQ(11, MyAdd(10, 20))
 	ltest.ASSERT_EQ(12, MyAdd(10, 20))
 end	
 
-function TestAdd4(a, b)
+local function TestAdd4(a, b)
 	ltest.EXCEPT_EQ(a + b, MyAdd(a, b))
 	ltest.ASSERT_EQ(a + b, MyAdd(a, b))
 end	
