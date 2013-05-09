@@ -21,10 +21,19 @@ function TestAdd1()
 end	
 
 function TestAdd2()
-	ltest.ASSERT_EQ(1, MyAdd(2, 8)):print("\tplugin info 2 + 8") 
+	ltest.ASSERT_EQ(1, MyAdd(2, 8)):print("ltest.ASSERT_EQ(1, MyAdd(2, 8))") 
+	ltest.EXCEPT_EQ(2, MyAdd(2, 8)):print("plugin info 2 + 8") 
+	ltest.ASSERT_EQ(3, MyAdd(2, 8)):print("plugin info 2 + 8") 
 end	
 
-function TestAdd3(a, b)
+function TestAdd3()
+	ltest.EXCEPT_EQ(10, MyAdd(10, 20))
+	ltest.ASSERT_EQ(11, MyAdd(10, 20))
+	ltest.ASSERT_EQ(12, MyAdd(10, 20))
+end	
+
+function TestAdd4(a, b)
+	ltest.EXCEPT_EQ(a + b, MyAdd(a, b))
 	ltest.ASSERT_EQ(a + b, MyAdd(a, b))
 end	
 
@@ -161,15 +170,16 @@ function main()
 	ltest.InitLTest()
 
 	ltest.AddLTestCase(TestAdd2, "TestAdd2")
-	ltest.AddLTestCase(TestAdd1, "TestAdd1")	
-	ltest.AddLTestCase(TestAdd3, "TestAdd3", {1, 3})
-	ltest.AddLTestGroupCase(TestAdd3, "TestAdd3_", { {21, 31}, {22, 32}, {23, 33}, } )
+	ltest.AddLTestCase(TestAdd1, "TestAdd1")
+	ltest.AddLTestCase(TestAdd3, "TestAdd3")
+	ltest.AddLTestCase(TestAdd4, "TestAdd4", {0, 0})
+	ltest.AddLTestGroupCase(TestAdd4, "TestAdd4_", { {21, 31}, {22, 32}, {23, 33}, } )
 
-	
+	--[[	
 	ltest.AddLTestSuite(CMyTestCase2:new(), "CMyTestCase2")
 	ltest.AddLTestSuite(CMyTestCase3:new(), "CMyTestCase3", "Case")
 	
-	
+	]]
 	
 	ltest.RunAllTests(CMyTestEnv:new())
 	

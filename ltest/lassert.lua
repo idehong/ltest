@@ -1,15 +1,16 @@
 --[[
 //////////////////////////////////////////////////////////////////////////
-// date ：2013-3-21
+// date ：2013-5-4
 // auth : macroli(idehong@gmail.com)
-// ver  : 1.05
-// desc : 常用工具类函数
+// ver  : 0.1
+// desc : assert and except 
 //////////////////////////////////////////////////////////////////////////    
 --]]
 ------------------------------------------------------------------------------
 
 module(..., package.seeall)
 
+-- for assert base
 local assert_mt_base = {}
 assert_mt_base.__eq = function(v1, v2)
 	return type(v1) == type(v2)
@@ -33,8 +34,6 @@ function CBaseAssert:new(oo)
     setmetatable(o, assert_mt_base)
     return o
 end
-
-
 
 
 local assert_mt_default = {}
@@ -70,8 +69,10 @@ function CStringAssert:new(oo)
     return o
 end
 
-
+-- for less than, equal than, great than result
 local _iTableLT, _iTableEQ, _iTableGT = -1, 0, 1
+
+-- compare function for table
 local function _cmpTable(left, right, iCurLevel, iMaxLevel)
 	if iCurLevel >= iMaxLevel then return _iTableLT end
 	
@@ -119,6 +120,8 @@ local function _cmpTable(left, right, iCurLevel, iMaxLevel)
 	return _iTableEQ		
 end
 
+
+-- concat function for table
 local function _strTable(left, strTip, iCurLevel, iMaxLevel)
 	if iCurLevel >= iMaxLevel then return strTip end
 	
@@ -143,7 +146,10 @@ local function _strTable(left, strTip, iCurLevel, iMaxLevel)
 	return strTip		
 end
 
+-- for table recursion level number
 local _iTableLevel = 3
+
+
 local assert_mt_table = {}
 assert_mt_table.__eq = function(v1, v2)
 	return type(v1.data) == type(v2.data) and _cmpTable(v1.data, v2.data, 0, _iTableLevel) ==  _iTableEQ
@@ -171,7 +177,8 @@ function CTableAssert:new(oo)
     return o
 end
 
--- for test environment
+
+-- for test assert and except
 CAssertMgr = {}
 function CAssertMgr:new(oo)
     local o = oo or {}
@@ -235,7 +242,6 @@ function CAssertMgr.helpWrapper(self, v1, v2)
 	return tmp.left, tmp.right
 end
 
-
 function CAssertMgr.CheckResult(self, lv, strTip)
 	if not self:GetResult() then
 		--[[ 
@@ -250,49 +256,63 @@ function CAssertMgr.CheckResult(self, lv, strTip)
 	end
 end
 
-
-function CAssertMgr.PCallCheckResult1(self, lv, strTip, v1)
-	if not self:GetResult() then 
+-- PCR = PCallCheckResult1
+function CAssertMgr.PCR1(self, lv, strTip, v1)
+	local bRet = self:GetResult() 
+	if not bRet then 
 		local l, r = self:helpWrapper(v1, v1)		
 		local strTmp = string.format("%s --> value:%s.", strTip, tostring(l))
 		local bResult, strError = pcall(function () self:CheckResult(lv, strTmp) end)
 		if not bResult and strError then self:print("\t" .. strError) end
 	end
+	return bRet		
 end
 
-function CAssertMgr.PCallCheckResult(self, lv, strTip, v1, v2)
-	if not self:GetResult() then 
+function CAssertMgr.PCR(self, lv, strTip, v1, v2)
+	local bRet = self:GetResult() 
+	if not bRet then 
 		local l, r = self:helpWrapper(v1, v2)		
 		local strTmp = string.format("%s --> left:%s, right:%s.", strTip, tostring(l), tostring(r))
 		local bResult, strError = pcall(function () self:CheckResult(lv, strTmp) end)
 		if not bResult and strError then self:print("\t" .. strError) end
 	end	
+	return bRet		
+end
+
+function CAssertMgr.print(self, ...)
+	if not self:GetResult() then print(...) end
+	return self
 end
 
 
 function CAssertMgr.AssertEQ(self, v1, v2)
 	local l, r = self:helpWrapper(v1, v2)
 	self.result = l == r
+	return self
 end
 
 function CAssertMgr.AssertLT(self, v1, v2)
 	local l, r = self:helpWrapper(v1, v2)
 	self.result = l < r
+	return self
 end
 
 function CAssertMgr.AssertLE(self, v1, v2)
 	local l, r = self:helpWrapper(v1, v2)
 	self.result = l <= r
+	return self
 end
 
 function CAssertMgr.AssertGT(self, v1, v2)
 	local l, r = self:helpWrapper(v1, v2)
 	self.result = l > r
+	return self	
 end
 
 function CAssertMgr.AssertGE(self, v1, v2)
 	local l, r = self:helpWrapper(v1, v2)
 	self.result = l >= r
+	return self	
 end
 
 function CAssertMgr.AssertNE(self, v1, v2)
@@ -301,6 +321,7 @@ function CAssertMgr.AssertNE(self, v1, v2)
 		local l, r = self:helpWrapper(v1, v2)
 		self.result = l ~= r
 	end
+	return self	
 end
 
 function CAssertMgr.AssertNear(self, v1, v2, nearValue)
@@ -309,19 +330,15 @@ function CAssertMgr.AssertNear(self, v1, v2, nearValue)
 		if v1 > v2 then self.result =  (v1 - v2 < nearValue) end
 		if v1 < v2 then self.result =  (v2 - v1 < nearValue) end
 	end
+	return self	
 end
 
 function CAssertMgr.AssertTrue(self, v1)
 	if v1 then self.result = true else self.result = false end
+	return self	
 end
 
 function CAssertMgr.AssertFalse(self, v1)
 	self.result = not self:AssertTrue(value)
+	return self		
 end
-
-
-function CAssertMgr.print(self, ...)
-	if not self:GetResult() then print(...) end
-	return self
-end
-
