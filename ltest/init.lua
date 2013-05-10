@@ -57,13 +57,15 @@ end
 function TestCase.TearDown(self)	
 end
 
+require("ltest.loutput")
+require("ltest.lassert")
+
 
 -- for assert
-require("ltest.lassert")
-local _atER = true 				-- for event result
-local _atStopLv = 2 			-- for stop level
-local _atStopTip = "macro_error_stop"  -- for stop level
-local _atErrLv = 6 				-- for error level
+local _atER = true 						-- for event result
+local _atStopLv = 2 					-- for stop level
+local _atStopTip = "macro_error_stop"  	-- for stop level
+local _atErrLv = 6 						-- for error level
 local _atMgr = ltest.lassert.CAssertMgr:new()
 
 function ASSERT_EQ(v1, v2)
@@ -158,51 +160,6 @@ function EXCEPT_FALSE(v1)
 end
 
 
-
--- for test output
-TestOutPut = {}
-function TestOutPut:new(oo)
-    local o = oo or {}
-    o.output = {
-    	labelNum = 10,
-    	fmt = { left = "[%-10s]", right = "[%10s]", },
-    	label = { run = {label=" RUN", fmt="left",}, ok = {label="OK ",  fmt="right",}, failed = {label="  FAILED",  fmt="left",},
-    		passed = {label="  PASSED", fmt="left",},
-    		split = {label="----------", fmt="right",},  
-    		group = {label="==========", fmt="right",},
-    	},
-    }
-    setmetatable(o, self)
-    self.__index = self
-    return o
-end
-
--- output tip: exec success
-function TestOutPut.Ok(self, ...)
-	print(...)
-end
-
--- output tip: exec failed
-function TestOutPut.Failed(self, ...)
-	print(...)
-end
-
--- output tip: tip msg
-function TestOutPut.Message(self, ...)
-	print(...)
-end
-
-function TestOutPut.Text(self, ...)
-	print(...)
-end
-
-function TestOutPut.GetFMTStr(self, label)
-	local tObj = self.output.label[label]
-	if not tObj then return end	
-	return string.format(self.output.fmt[tObj.fmt], tObj.label)	
-end
-
-
 -- for test mgr
 local TestMgr = {}
 function TestMgr:new(oo)
@@ -222,6 +179,16 @@ function TestMgr:new(oo)
 	    	-- filter case name
 	    	notcase = {privateName=true, SetUpTestCase=true, TearDownTestCase=true, SetUp=true, TearDown=true, TestCase=true, new=new},
     	},
+    	
+    	-- user use para
+    	para = {
+    		ltest_list_tests=false,	 	-- List the names of all tests instead of running them.
+    		ltest_repeat=false,			-- Run the tests repeatedly; use a negative count to repeat forever.
+    		ltest_filter=false,			-- Run only the tests whose name matches
+
+    		ltest_list_falied=false,	-- Generate an TXT report in the given directory or with the given file name
+    		ltest_output=false,			-- Generate an XML report in the given directory or with the given file name
+    	},
     }
     
     setmetatable(o, self)
@@ -229,12 +196,14 @@ function TestMgr:new(oo)
     return o
 end
 
-function TestMgr.Init(self, tPara, oOutput)	
-	if oOutput then 
-		self.data.oOutput = oOutput
-	else
-		self.data.oOutput = TestOutPut:new()
-	end
+function TestMgr.Init(self, tPara)	
+	self.data.oOutput = ltest.loutput.CmdTestOutPut:new()
+	if tPara and tPara.ltest_list_tests then self.para.ltest_list_tests = tPara.ltest_list_tests end
+	if tPara and tPara.ltest_repeat then self.para.ltest_repeat = tPara.ltest_repeat end
+	if tPara and tPara.ltest_filter then self.para.ltest_filter = tPara.ltest_filter end
+	if tPara and tPara.ltest_list_falied then self.para.ltest_list_falied = tPara.ltest_list_falied end
+	if tPara and tPara.ltest_output then self.para.ltest_output = tPara.ltest_output end
+	
 	self.data.all_suite[self.data.generalGlobalName] = self.data.global
 end
 
@@ -288,88 +257,128 @@ end
 function TestMgr.Run(self, oEnv)
 	local oOutput = self.data.oOutput
 	-- todo
-	oOutput:Message("Note: ltest filter = CDailyBattleTest.*\r\n")
-	local iCount, iGroup = self:countAllCase()
-	local strBegin = string.format("%s Running %d tests from %d test case.", oOutput:GetFMTStr("group"), iCount, iGroup)
-	oOutput:Message( strBegin )
+	if self.para.ltest_filter and type(self.para.ltest_filter) == type("") then 
+		oOutput:FilterInfo("Note: ltest filter = %s\r\n", self.para.ltest_filter)
+	end
+		
+	local iCount, iGroup, tSuiteCaseKey = self:countAllCase(self.para.ltest_filter)
+	oOutput:BeginGroupSuite( iCount, iGroup )
 	
 	local bUseEnv = (oEnv and "env_macro" == oEnv:privateName())
-	if bUseEnv then	
-		oEnv:SetUp() 
-		oOutput:Message( oOutput:GetFMTStr("split") .. " Global test environment set-up.")
-	end
+	if bUseEnv then	 oEnv:SetUp(); oOutput:BeginGroupEnv() end
 
-	local tFailedList = self:runAllSuite(oOutput)
+	local tFailedList = self:runAllSuite(oOutput, tSuiteCaseKey)
 	
-	if bUseEnv then	
-		oEnv:TearDown()	
-		oOutput:Message( oOutput:GetFMTStr("split") .. " Global test environment tear-down.")
-	end	
+	if bUseEnv then	oEnv:TearDown(); oOutput:EndGroupEnv() end	
 	
-	local iTotalTime, iPassedNum = 0, 0
+	local iTotalTime = 0
 	for k, v in pairs(self.data.all_suite) do
 		iTotalTime = iTotalTime + v.prop.costTime
-		iPassedNum = iPassedNum + v.prop.okNum
 	end
-	oOutput:Message( string.format("%s (%d ms total)", strBegin, iTotalTime) )
-	oOutput:Message( string.format( "%s %d tests.", oOutput:GetFMTStr("passed"), iPassedNum) )
-	
-	local iFailedNum = #tFailedList
-	if iFailedNum > 0 then
-		local strTipFailed = oOutput:GetFMTStr("failed")
-		oOutput:Message( string.format( "%s %d tests, listed below:", strTipFailed, iFailedNum) )
-		for k, v in pairs(tFailedList) do
-			oOutput:Message( string.format( "%s %s", strTipFailed, v) )
-		end
-		oOutput:Message( string.format( "\r\n%d FAILED TESTS", iFailedNum) )
-	end
+
+	oOutput:EndGroupSuite(iTotalTime)
+	oOutput:StaticInfo()
 	
 	self:Fini()
 	return 0
 end
 
-function TestMgr.countAllCase(self, oOutput)	
-	local iCount, iGroup = 0, 0
-	for k, v in pairs(self.data.all_suite) do
-		iCount = iCount + v.prop.totalNum
-		iGroup = iGroup + 1
+function TestMgr.countAllCase(self, strFilter)	
+	local tFilter = {}
+	local iPosStart, iPosEnd = 1, 1
+	while strFilter do
+		iPosEnd = string.find(strFilter, ":", iPosStart)
+		if not iPosEnd then 
+			table.insert(tFilter, string.sub(strFilter, iPosStart, #strFilter - 1) ) 		
+			break
+		end
+		table.insert(tFilter, string.sub(strFilter, iPosStart, iPosEnd - 3) )  
+		iPosStart = iPosEnd + 1
 	end
-	return iCount, iGroup
+	
+	local iCount, iGroup = 0, 0
+	local tSuiteKey = {}
+	local bUsed = true
+	for k, v in pairs(self.data.all_suite) do
+		local tCaseKey = {}
+		for kk, vv in pairs(v.list) do
+			if tFilter and #tFilter > 0 then
+				bUsed = false
+				for wk, kf in pairs(tFilter) do
+					if bUsed then break end
+					if k == self.data.generalGlobalName then
+						for w in  string.gmatch(k .. "." .. vv.label, kf) do bUsed = true; break end
+					else
+						for w in  string.gmatch(vv.label, kf) do bUsed = true; break end
+					end
+				end
+			end
+			if bUsed then table.insert(tCaseKey, {name=kk, id=vv.no}) end
+		end
+		if #tCaseKey > 0 then 
+			table.sort(tCaseKey, function(a, b) return a.id < b.id end)
+			table.insert(tSuiteKey, {name=k, id=v.prop.no, list=tCaseKey}) 
+			iCount = iCount + #tCaseKey
+			iGroup = iGroup + 1
+		end
+	end
+	table.sort(tSuiteKey, function(a, b) return a.id < b.id end)
+	return iCount, iGroup, tSuiteKey
 end	
 
-function TestMgr.runAllSuite(self, oOutput)	
-	local tSuiteKey = {}	
-	for k, v in pairs(self.data.all_suite) do
-		tSuiteKey[v.prop.no] = { name=k, no=v.prop.no }
-	end
-
+function TestMgr.runAllSuite(self, oOutput, tSuiteCaseKey)	
 	local tFailedList = {}		
-	for k, v in ipairs(tSuiteKey) do
-		self:runGroupSuite(tFailedList, self.data.all_suite[v.name], oOutput)
+	for k, v in ipairs(tSuiteCaseKey) do
+		self:runGroupSuite(tFailedList, self.data.all_suite[v.name], v.list, oOutput)
 	end
 	return tFailedList
 end
 
-function TestMgr.runGroupSuite(self, tFailedList, tSuite, oOutput)
-	local tCaseKey = {}
-	for k, v in pairs(tSuite.list) do
-		tCaseKey[v.no] = {name=k, no=v.no}
-	end
-	
-	local strTipBegin = string.format("%s %d tests from %s", oOutput:GetFMTStr("split"), #tCaseKey, tSuite.prop.name)
-	oOutput:Message( strTipBegin )	
+
+function TestMgr.runGroupSuite(self, tFailedList, tSuite, tCaseKey, oOutput)
+	oOutput:BeginSuite( #tCaseKey, tSuite.prop.name )	
 	if tSuite.prop.oCls then tSuite.prop.oCls:SetUpTestCase() end
 	
-	local iItemTime, strItemTxt, oTmpCase = 0, "", false
-	local bResult, strError = false, ""
+	local bExecResult = false
 	for k, v in ipairs(tCaseKey) do
-		oTmpCase = tSuite.list[v.name]
-		oOutput:Text(oOutput:GetFMTStr("run") .. " " .. oTmpCase.label)
-		iItemTime = os.clock()
-		if tSuite.prop.oCls then tSuite.prop.oCls:SetUp() end
+		local oTmpCase = tSuite.list[v.name]		
+		oTmpCase.result, oTmpCase.costTime = self:runCase(oTmpCase, tSuite, oOutput)
+		tSuite.prop.costTime = oTmpCase.costTime + tSuite.prop.costTime
 		
-		-- for assert step over
-		_atER = true
+		if not oTmpCase.result then
+			tSuite.prop.failedNum = 1 + tSuite.prop.failedNum
+			table.insert(tFailedList, oTmpCase.label)	
+		else
+			tSuite.prop.okNum = 1 + tSuite.prop.okNum
+		end
+	end		
+
+	if tSuite.prop.oCls then tSuite.prop.oCls:TearDownTestCase() end
+	oOutput:EndSuite( #tCaseKey, tSuite.prop.name,  tSuite.prop.costTime, tSuite.prop.failedNum)
+end
+
+
+
+function TestMgr.runCase(self, oTmpCase, tSuite, oOutput)
+	-- for assert step over
+	_atER = true
+	local bExecResult, bResult, strError = false, false, ""
+	
+	local iItemTime = os.clock()
+	oOutput:BeginCase(oTmpCase.label)
+				
+	if tSuite.prop.oCls then 
+		tSuite.prop.oCls:SetUp() 		
+		if oTmpCase.para then
+			if oTmpCase.para[1] then
+				bResult, strError = pcall(function () oTmpCase:fun( unpack( oTmpCase.para) ) end)
+			else
+				bResult, strError = pcall(function () oTmpCase:fun( oTmpCase.para) end)
+			end
+		else
+			bResult, strError = pcall(function () oTmpCase:fun() end)		
+		end
+	else	
 		if oTmpCase.para then
 			if oTmpCase.para[1] then
 				bResult, strError = pcall(function () oTmpCase.fun( unpack( oTmpCase.para) ) end)
@@ -378,32 +387,22 @@ function TestMgr.runGroupSuite(self, tFailedList, tSuite, oOutput)
 			end
 		else
 			bResult, strError = pcall(function () oTmpCase.fun() end)		
-		end
-		oTmpCase.costTime = os.clock() - iItemTime
-		tSuite.prop.costTime = oTmpCase.costTime + tSuite.prop.costTime
-		strItemTxt = string.format(" %s (%d ms)", oTmpCase.label, iItemTime)
-		if not bResult or not _atMgr:GetResult() then 
-			oTmpCase.result = false
-			tSuite.prop.failedNum = 1 + tSuite.prop.failedNum
-
-			table.insert(tFailedList, oTmpCase.label)
-			if strError and not (not _atER and string.find(strError, _atStopTip)) then oOutput:Failed(strError) end
+		end	
+	end
 	
-			if tSuite.prop.oCls then tSuite.prop.oCls:TearDown() end		
-			oOutput:Text(oOutput:GetFMTStr("failed") .. strItemTxt )
-		else
-			oTmpCase.result = true
-			tSuite.prop.okNum = 1 + tSuite.prop.okNum
+	if not bResult or not _atMgr:GetResult() then 
+		if strError and not (not _atER and string.find(strError, _atStopTip)) then oOutput:FailedTxt(strError) end
+	else
+		bExecResult = true
+	end
 	
-			if tSuite.prop.oCls then tSuite.prop.oCls:TearDown() end		
-			oOutput:Text(oOutput:GetFMTStr("ok") .. strItemTxt)
-		end
-	end		
+	if tSuite.prop.oCls then tSuite.prop.oCls:TearDown() end		
+	oOutput:EndCase(true, bExecResult, iItemTime, oTmpCase.label)
+	iItemTime = os.clock() - iItemTime	
 
-	if tSuite.prop.oCls then tSuite.prop.oCls:TearDownTestCase() end
-	local strTipEnd = string.format("%s (%d ms total)\r\n", strTipBegin, tSuite.prop.costTime)
-	oOutput:Message( strTipEnd )
+	return bExecResult, iItemTime
 end
+
 
 function TestMgr.addRealSuite(self, strSuiteName, cCls)	
 	if oCls and (type(oCls) ~= type({}) or type(oCls.privateName) ~= type(print) or "case_macro" ~= oCls:privateName()) then return end

@@ -166,7 +166,8 @@ end
 
 function main()
 	print("-------------------------------- begin")
-	ltest.InitLTest()
+	local tInitPara = {ltest_filter="CMyTestCase1.*"}
+	ltest.InitLTest(tInitPara)
 
 	ltest.AddLTestCase(TestAdd2, "TestAdd2")
 	ltest.AddLTestCase(TestAdd1, "TestAdd1")
@@ -174,11 +175,19 @@ function main()
 	ltest.AddLTestCase(TestAdd4, "TestAdd4", {0, 0})
 	ltest.AddLTestGroupCase(TestAdd4, "TestAdd4_", { {21, 31}, {22, 32}, {23, 33}, } )
 
-	--[[	
+	
 	ltest.AddLTestSuite(CMyTestCase2:new(), "CMyTestCase2")
 	ltest.AddLTestSuite(CMyTestCase3:new(), "CMyTestCase3", "Case")
+
+	local oTmpCls = CMyTestCase1:new()
+	local oTmpPara = { {1, 1}, {"ab", "ab"}, {true, true}, {false, false},} 
+		--{nil, nil}, {print, print}, 
+--		{{}, {}}, {{1, 3}, {1, 3}}, {{a=10, b="BB",},{a=10, b="BB",} },
+	--	{{a=10, b="BB", c={4, 5}},{a=10, b="BB", c={4, 5}, } }
 	
-	]]
+--	local funTmp = oTmpCls["TestEQ"]	
+	ltest.AddLTestGroupCase(oTmpCls["TestEQ"], "TestEQ", oTmpPara, "CMyTestCase1", oTmpCls)
+	
 	
 	ltest.RunAllTests(CMyTestEnv:new())
 	
