@@ -10,7 +10,7 @@
 
 module(..., package.seeall)
 
-VERSION = "0.1"
+VERSION = "0.5"
 
 -- for test environment
 TestEnvironment = {}
@@ -66,97 +66,115 @@ local _atER = true 						-- for event result
 local _atStopLv = 2 					-- for stop level
 local _atStopTip = "macro_error_stop"  	-- for stop level
 local _atErrLv = 6 						-- for error level
-local _atMgr = ltest.lassert.CAssertMgr:new()
+local _atMgr = false
 
-function ASSERT_EQ(v1, v2)
+function ASSERT_EQ(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertEQ(v1, v2):PCR(_atErrLv, "ASSERT_EQ failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertEQ(v1, v2):PCR(bNoP, _atErrLv, "ASSERT_EQ failed", v1, v2); return _atMgr
 end
 
-function ASSERT_LT(v1, v2)
+function ASSERT_LT(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertLT(v1, v2):PCR(_atErrLv, "ASSERT_LT failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertLT(v1, v2):PCR(bNoP, _atErrLv, "ASSERT_LT failed", v1, v2); return _atMgr
 end
 
-function ASSERT_LE(v1, v2)
+function ASSERT_LE(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertLE(v1, v2):PCR(_atErrLv, "ASSERT_LE failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertLE(v1, v2):PCR(bNoP, _atErrLv, "ASSERT_LE failed", v1, v2); return _atMgr
 end
 
-function ASSERT_GT(v1, v2)
+function ASSERT_GT(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertGT(v1, v2):PCR(_atErrLv, "ASSERT_GT failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertGT(v1, v2):PCR(bNoP, _atErrLv, "ASSERT_GT failed", v1, v2); return _atMgr
 end
 
-function ASSERT_GE(v1, v2)
+function ASSERT_GE(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertGE(v1, v2):PCR(_atErrLv, "ASSERT_GE failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertGE(v1, v2):PCR(bNoP, _atErrLv, "ASSERT_GE failed", v1, v2); return _atMgr
 end
 
-function ASSERT_NE(v1, v2)
+function ASSERT_NE(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertNE(v1, v2):PCR(_atErrLv, "ASSERT_NE failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertNE(v1, v2):PCR(bNoP, _atErrLv, "ASSERT_NE failed", v1, v2); return _atMgr
 end
 
-function ASSERT_NEAR(v1, v2, nearValue)
+function ASSERT_NEAR(v1, v2, nearValue, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertNear(v1, v2, nearValue):PCR(_atErrLv, "ASSERT_NEAR failed", v1, v2); return _atMgr
+	_atER = _atMgr:AssertNear(v1, v2, nearValue):PCR(bNoP, _atErrLv, "ASSERT_NEAR failed", v1, v2); return _atMgr
 end
 
-function ASSERT_TRUE(v1)
+function ASSERT_TRUE(v1, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertTrue(v1):PCR1(_atErrLv, "ASSERT_TRUE failed", v1); return _atMgr
+	_atER = _atMgr:AssertTrue(v1):PCR1(bNoP, _atErrLv, "ASSERT_TRUE failed", v1); return _atMgr
 end
 
-function ASSERT_FALSE(v1)
+function ASSERT_FALSE(v1, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atER = _atMgr:AssertFalse(v1):PCR1(_atErrLv, "ASSERT_FALSE failed", v1); return _atMgr
+	_atER = _atMgr:AssertFalse(v1):PCR1(bNoP, _atErrLv, "ASSERT_FALSE failed", v1); return _atMgr
 end
 
 
-function EXCEPT_EQ(v1, v2)
+function EXCEPT_EQ(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertEQ(v1, v2):PCR(_atErrLv, "EXCEPT_EQ failed", v1, v2); return _atMgr
+	_atMgr:AssertEQ(v1, v2):PCR(bNoP, _atErrLv, "EXCEPT_EQ failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_LT(v1, v2)
+function EXCEPT_LT(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertLT(v1, v2):PCR(_atErrLv, "EXCEPT_LT failed", v1, v2); return _atMgr
+	_atMgr:AssertLT(v1, v2):PCR(bNoP, _atErrLv, "EXCEPT_LT failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_LE(v1, v2)
+function EXCEPT_LE(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertLE(v1, v2):PCR(_atErrLv, "EXCEPT_LE failed", v1, v2); return _atMgr
+	_atMgr:AssertLE(v1, v2):PCR(bNoP, _atErrLv, "EXCEPT_LE failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_GT(v1, v2)
+function EXCEPT_GT(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertGT(v1, v2):PCR(_atErrLv, "EXCEPT_GT failed", v1, v2); return _atMgr
+	_atMgr:AssertGT(v1, v2):PCR(bNoP, _atErrLv, "EXCEPT_GT failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_GE(v1, v2)
+function EXCEPT_GE(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertGE(v1, v2):PCR(_atErrLv, "EXCEPT_GE failed", v1, v2); return _atMgr
+	_atMgr:AssertGE(v1, v2):PCR(bNoP, _atErrLv, "EXCEPT_GE failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_NE(v1, v2)
+function EXCEPT_NE(v1, v2, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertNE(v1, v2):PCR(_atErrLv, "EXCEPT_NE failed", v1, v2); return _atMgr
+	_atMgr:AssertNE(v1, v2):PCR(bNoP, _atErrLv, "EXCEPT_NE failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_NEAR(v1, v2, nearValue)
+function EXCEPT_NEAR(v1, v2, nearValue, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertNear(v1, v2, nearValue):PCR(_atErrLv, "EXCEPT_NEAR failed", v1, v2); return _atMgr
+	_atMgr:AssertNear(v1, v2, nearValue):PCR(bNoP, _atErrLv, "EXCEPT_NEAR failed", v1, v2); return _atMgr
 end
 
-function EXCEPT_TRUE(v1)
+function EXCEPT_TRUE(v1, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertTrue(v1):PCR1(_atErrLv, "EXCEPT_TRUE failed", v1); return _atMgr
+	_atMgr:AssertTrue(v1):PCR1(bNoP, _atErrLv, "EXCEPT_TRUE failed", v1); return _atMgr
 end
 
-function EXCEPT_FALSE(v1)
+function EXCEPT_FALSE(v1, bNoP)
+	if not _atMgr then return end
 	if not _atER then error(_atStopTip, _atStopLv) end
-	_atMgr:AssertFalse(v1):PCR1(_atErrLv, "EXCEPT_FALSE failed", v1); return _atMgr
+	_atMgr:AssertFalse(v1):PCR1(bNoP, _atErrLv, "EXCEPT_FALSE failed", v1); return _atMgr
 end
 
 
@@ -197,12 +215,24 @@ function TestMgr:new(oo)
 end
 
 function TestMgr.Init(self, tPara)	
-	self.data.oOutput = ltest.loutput.CmdTestOutPut:new()
 	if tPara and tPara.ltest_list_tests then self.para.ltest_list_tests = tPara.ltest_list_tests end
 	if tPara and tPara.ltest_repeat then self.para.ltest_repeat = tPara.ltest_repeat end
 	if tPara and tPara.ltest_filter then self.para.ltest_filter = tPara.ltest_filter end
 	if tPara and tPara.ltest_list_falied then self.para.ltest_list_falied = tPara.ltest_list_falied end
 	if tPara and tPara.ltest_output then self.para.ltest_output = tPara.ltest_output end
+	
+	local tOutputOther = {}
+	if self.para.ltest_list_tests then
+		local oTmp = ltest.loutput.CAllCaseListOutPut:new({filename=self.para.ltest_list_tests})
+		table.insert(tOutputOther, oTmp)
+	end
+	if self.para.ltest_list_falied then
+		local oTmp = ltest.loutput.CFailedCaseListOutPut:new({filename=self.para.ltest_list_falied})
+		table.insert(tOutputOther, oTmp)
+	end
+	
+	self.data.oOutput = ltest.loutput.CmdTestOutPut:new({outer = tOutputOther})
+	_atMgr = ltest.lassert.CAssertMgr:new({oOutput=self.data.oOutput})
 	
 	self.data.all_suite[self.data.generalGlobalName] = self.data.global
 end
@@ -214,7 +244,7 @@ function TestMgr.Fini(self)
 end
 
 function TestMgr.AddSuite(self, strSuiteName, oCls, filterCaseName)	
-	if not oCls or "case_macro" ~= oCls:privateName() or self.data.notcase[strSuiteName] then return false end
+	if not oCls or  TestCase:privateName() ~= oCls:privateName() or self.data.notcase[strSuiteName] then return false end
 	local strFind = "Test"
 	if filterCaseName and type(filterCaseName) == "string" then strFind = filterCaseName end
 		
@@ -256,7 +286,6 @@ end
 
 function TestMgr.Run(self, oEnv)
 	local oOutput = self.data.oOutput
-	-- todo
 	if self.para.ltest_filter and type(self.para.ltest_filter) == type("") then 
 		oOutput:FilterInfo("Note: ltest filter = %s\r\n", self.para.ltest_filter)
 	end
@@ -264,7 +293,7 @@ function TestMgr.Run(self, oEnv)
 	local iCount, iGroup, tSuiteCaseKey = self:countAllCase(self.para.ltest_filter)
 	oOutput:BeginGroupSuite( iCount, iGroup )
 	
-	local bUseEnv = (oEnv and "env_macro" == oEnv:privateName())
+	local bUseEnv = (oEnv and TestEnvironment:privateName() == oEnv:privateName())
 	if bUseEnv then	 oEnv:SetUp(); oOutput:BeginGroupEnv() end
 
 	local tFailedList = self:runAllSuite(oOutput, tSuiteCaseKey)
@@ -284,6 +313,7 @@ function TestMgr.Run(self, oEnv)
 end
 
 function TestMgr.countAllCase(self, strFilter)	
+	-- parset filter
 	local tFilter = {}
 	local iPosStart, iPosEnd = 1, 1
 	while strFilter do
@@ -296,6 +326,7 @@ function TestMgr.countAllCase(self, strFilter)
 		iPosStart = iPosEnd + 1
 	end
 	
+	-- filter case
 	local iCount, iGroup = 0, 0
 	local tSuiteKey = {}
 	local bUsed = true
@@ -369,22 +400,14 @@ function TestMgr.runCase(self, oTmpCase, tSuite, oOutput)
 				
 	if tSuite.prop.oCls then 
 		tSuite.prop.oCls:SetUp() 		
-		if oTmpCase.para then
-			if oTmpCase.para[1] then
-				bResult, strError = pcall(function () oTmpCase:fun( unpack( oTmpCase.para) ) end)
-			else
-				bResult, strError = pcall(function () oTmpCase:fun( oTmpCase.para) end)
-			end
+		if oTmpCase.para  and #oTmpCase.para > 0 then
+			bResult, strError = pcall(function () oTmpCase.fun(tSuite.prop.oCls, unpack( oTmpCase.para) ) end)
 		else
-			bResult, strError = pcall(function () oTmpCase:fun() end)		
+			bResult, strError = pcall(function () oTmpCase.fun(tSuite.prop.oCls) end)		
 		end
 	else	
-		if oTmpCase.para then
-			if oTmpCase.para[1] then
-				bResult, strError = pcall(function () oTmpCase.fun( unpack( oTmpCase.para) ) end)
-			else
-				bResult, strError = pcall(function () oTmpCase.fun( oTmpCase.para) end)
-			end
+		if oTmpCase.para and #oTmpCase.para > 0 then
+			bResult, strError = pcall(function () oTmpCase.fun( unpack( oTmpCase.para) ) end)
 		else
 			bResult, strError = pcall(function () oTmpCase.fun() end)		
 		end	
@@ -405,7 +428,7 @@ end
 
 
 function TestMgr.addRealSuite(self, strSuiteName, cCls)	
-	if oCls and (type(oCls) ~= type({}) or type(oCls.privateName) ~= type(print) or "case_macro" ~= oCls:privateName()) then return end
+	if oCls and (type(oCls) ~= type({}) or type(oCls.privateName) ~= type(print) or TestCase:privateName() ~= oCls:privateName()) then return end
 	if not strSuiteName or type(strSuiteName) ~= type("") or self.data.notcase[strSuiteName] then return end	
 
 	local tSuiteGroup = self.data.all_suite

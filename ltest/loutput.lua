@@ -85,13 +85,25 @@ function CmdTestOutPut:new(oo)
     return o
 end
 
+function CmdTestOutPut.outerList(self, strFun, ...)
+	if not self.outer then return end
+	
+	for i, v in pairs(self.outer) do
+		v[strFun](v, ...)
+	end
+end
+
 function CmdTestOutPut.FilterInfo(self, ...)
 	self:Message(...)
+	
+	self:outerList("FilterInfo", ...)
 end
 
 function CmdTestOutPut.BeginCase(self, strLabelName)
 	self.stat.iCurrCaseCount = 1 + self.stat.iCurrCaseCount
 	self:Message("%s %s", self:getFMTStr("run", string.format(" %d%%", math.floor(self.stat.iCurrCaseCount*100/self.stat.iTotalCase))), strLabelName)
+	
+	self:outerList("BeginCase", strLabelName)
 end
 
 function CmdTestOutPut.EndCase(self, bRun, bSuccess, iTime, strLabelName)
@@ -104,14 +116,20 @@ function CmdTestOutPut.EndCase(self, bRun, bSuccess, iTime, strLabelName)
 		table.insert(self.stat.tFailedName, strLabelName)
 		self:Message("%s %s (%d ms)", self:getFMTStr("failed"), strLabelName, iTime)
 	end
+	
+	self:outerList("EndCase", bRun, bSuccess, iTime, strLabelName)	
 end
 
 function CmdTestOutPut.BeginSuite(self, iNumber, strSuiteName)
-	self:Message("%s %d tests from %s.", self:getFMTStr("split"), iNumber, strSuiteName)
+	self:Message("%s %d tests from %s.", self:getFMTStr("split"), iNumber, strSuiteName)	
+
+	self:outerList("BeginSuite", iNumber, strSuiteName)		
 end
 
 function CmdTestOutPut.EndSuite(self, iNumber, strSuiteName, iTime, iFailedNum)
 	self:Message("%s %d tests from %s (%d ms total).\n", self:getFMTStr("split"), iNumber, strSuiteName, iTime)
+
+	self:outerList("EndSuite", iNumber, strSuiteName, iTime, iFailedNum)		
 end
 
 function CmdTestOutPut.BeginGroupSuite(self, iCaseNum, iSuiteNum)
@@ -119,10 +137,15 @@ function CmdTestOutPut.BeginGroupSuite(self, iCaseNum, iSuiteNum)
 	self.stat.iTotalSuite = iSuiteNum
 	
 	self:Message("%s Running %d tests from %d test cases", self:getFMTStr("group"), iCaseNum, iSuiteNum)
+
+
+	self:outerList("BeginGroupSuite", iCaseNum, iSuiteNum)		
 end
 
 function CmdTestOutPut.EndGroupSuite(self, iTime)
 	self:Message("%s Running %d  tests from %d test cases ran. (%d ms total)", self:getFMTStr("group"), self.stat.iTotalCase, self.stat.iTotalSuite, iTime)
+
+	self:outerList("EndGroupSuite", iTime)		
 end
 
 function CmdTestOutPut.BeginGroupEnv(self)
@@ -134,6 +157,9 @@ function CmdTestOutPut.EndGroupEnv(self)
 end
 
 function CmdTestOutPut.FailedTxt(self, ...)
+	self:Message(...)
+
+	self:outerList("FailedTxt", ...)		
 end
 
 function CmdTestOutPut.StaticInfo(self)
@@ -146,8 +172,9 @@ function CmdTestOutPut.StaticInfo(self)
 		self:Message("%s %s", self:getFMTStr("failed"), v)
 	end
 	
-	self:Message("\n %d TESTS, %d FAILED", self.stat.iTotalCase, iFailedNum)
+	self:Message("\n %d SUITES, %d TESTS, %d FAILED", self.stat.iTotalSuite, self.stat.iTotalCase, iFailedNum)
 
+	self:outerList("StaticInfo")		
 end
 
 function CmdTestOutPut.getFMTStr(self, label, addvalue)
@@ -158,3 +185,82 @@ function CmdTestOutPut.getFMTStr(self, label, addvalue)
 		return string.format(self.output.fmt[tObj.fmt], tObj.label)	
 	end
 end
+
+
+--------------------------------------------------------------------------------
+CAllCaseListOutPut = TestOutPutBase:new()
+function CAllCaseListOutPut:new(oo)
+    local o = oo or {}
+    o.data = {f=false}
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function CAllCaseListOutPut.BeginCase(self, strLabelName)
+	self:Message(strLabelName)
+end
+
+function CAllCaseListOutPut.EndSuite(self, iNumber, strSuiteName, iTime, iFailedNum)
+	if self.data.f then self.data.f:flush() end
+end
+
+function CAllCaseListOutPut.BeginGroupSuite(self, iCaseNum, iSuiteNum)
+	f = io.open(self.filename, "w+b")
+	if not f then return end
+	self.data.f = f
+end
+
+function CAllCaseListOutPut.EndGroupSuite(self, iCaseNum, iSuiteNum, iTime, iFailedNum, iStartTime)
+	if self.data.f then 
+		self.data.f:close()
+		self.data.f = false
+	end
+end
+
+function CAllCaseListOutPut.Message(self, ...)
+	if self.data.f then self.data.f:write(self:mergerTxt(...) .. "\r\n") end
+end
+
+
+CFailedCaseListOutPut = TestOutPutBase:new()
+function CFailedCaseListOutPut:new(oo)
+    local o = oo or {}
+    o.data = {f=false}    
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function CFailedCaseListOutPut.EndCase(self, bRun, bSuccess, iTime, strLabelName)
+	if bRun and not bSuccess then
+		self:Message(strLabelName .. "\r\n\r\n")
+	end
+end
+
+function CFailedCaseListOutPut.EndSuite(self, iNumber, strSuiteName, iTime, iFailedNum)
+	if self.data.f then self.data.f:flush() end
+end
+
+function CFailedCaseListOutPut.BeginGroupSuite(self, iCaseNum, iSuiteNum)
+	f = io.open(self.filename, "w+b")
+	if not f then return end
+	self.data.f = f
+end
+
+function CFailedCaseListOutPut.EndGroupSuite(self, iCaseNum, iSuiteNum, iTime, iFailedNum, iStartTime)
+	if self.data.f then 
+		self.data.f:close()
+		self.data.f = false
+	end
+end
+
+function CFailedCaseListOutPut.FailedTxt(self, ...)
+	self:Message(...)
+end
+
+
+function CFailedCaseListOutPut.Message(self, ...)
+	if self.data.f then self.data.f:write(self:mergerTxt(...) .. "\r\n") end
+end
+
