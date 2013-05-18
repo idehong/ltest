@@ -52,6 +52,9 @@ end
 function TestOutPutBase.StaticInfo(self)
 end
 
+function TestOutPutBase.GetStaticInfo(self)
+end
+
 function TestOutPutBase.Message(self, ...)
 	print( self:mergerTxt(...) )
 end
@@ -133,11 +136,13 @@ function CmdTestOutPut.EndSuite(self, iNumber, strSuiteName, iTime, iFailedNum)
 end
 
 function CmdTestOutPut.BeginGroupSuite(self, iCaseNum, iSuiteNum)
-	self.stat.iTotalCase  = iCaseNum
-	self.stat.iTotalSuite = iSuiteNum
+    self.stat = {
+    	iTotalCase = iCaseNum, iTotalSuite = iSuiteNum, iTotalPassed = 0,
+    	tFailedName = {},  
+    	iCurrCaseCount = 0,  	
+    }
 	
 	self:Message("%s Running %d tests from %d test cases", self:getFMTStr("group"), iCaseNum, iSuiteNum)
-
 
 	self:outerList("BeginGroupSuite", iCaseNum, iSuiteNum)		
 end
@@ -162,6 +167,10 @@ function CmdTestOutPut.FailedTxt(self, ...)
 	self:outerList("FailedTxt", ...)		
 end
 
+function TestOutPutBase.Message(self, ...)
+	if not self.silence then print( self:mergerTxt(...) ) end		
+end
+
 function CmdTestOutPut.StaticInfo(self)
 	self:Message("%s %d tests.", self:getFMTStr("passed"), self.stat.iTotalPassed)
 
@@ -175,6 +184,12 @@ function CmdTestOutPut.StaticInfo(self)
 	self:Message("\n %d SUITES, %d TESTS, %d FAILED", self.stat.iTotalSuite, self.stat.iTotalCase, iFailedNum)
 
 	self:outerList("StaticInfo")		
+end
+
+
+function CmdTestOutPut.GetStaticInfo(self)
+	local iFailedNum = #self.stat.tFailedName
+	return {iTotalSuite=self.stat.iTotalSuite, iTotalCase=self.stat.iTotalCase, iFailedNum=iFailedNum}
 end
 
 function CmdTestOutPut.getFMTStr(self, label, addvalue)

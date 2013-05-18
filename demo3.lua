@@ -125,6 +125,10 @@ function main()
 
 	
 	ltest.RunAllTests(CMyTestEnv:new())
+
+	local t = ltest.GetRunStatInfo()
+	--print(t.iFailedNum)
+
 end   
 
 main()

@@ -10,7 +10,7 @@
 
 module(..., package.seeall)
 
-VERSION = "0.5"
+VERSION = "0.51"
 
 -- for test environment
 TestEnvironment = {}
@@ -206,7 +206,11 @@ function TestMgr:new(oo)
 
     		ltest_list_falied=false,	-- Generate an TXT report in the given directory or with the given file name
     		ltest_output=false,			-- Generate an XML report in the given directory or with the given file name
+    		ltest_silence=false,		-- if true then silence output
     	},
+    	
+    	-- stat info
+    	stat = {},
     }
     
     setmetatable(o, self)
@@ -220,6 +224,7 @@ function TestMgr.Init(self, tPara)
 	if tPara and tPara.ltest_filter then self.para.ltest_filter = tPara.ltest_filter end
 	if tPara and tPara.ltest_list_falied then self.para.ltest_list_falied = tPara.ltest_list_falied end
 	if tPara and tPara.ltest_output then self.para.ltest_output = tPara.ltest_output end
+	if tPara and tPara.ltest_silence then self.ltest_silence = tPara.ltest_silence end
 	
 	local tOutputOther = {}
 	if self.para.ltest_list_tests then
@@ -231,7 +236,7 @@ function TestMgr.Init(self, tPara)
 		table.insert(tOutputOther, oTmp)
 	end
 	
-	self.data.oOutput = ltest.loutput.CmdTestOutPut:new({outer = tOutputOther})
+	self.data.oOutput = ltest.loutput.CmdTestOutPut:new({outer = tOutputOther, silence=self.ltest_silence})
 	_atMgr = ltest.lassert.CAssertMgr:new({oOutput=self.data.oOutput})
 	
 	self.data.all_suite[self.data.generalGlobalName] = self.data.global
@@ -308,8 +313,13 @@ function TestMgr.Run(self, oEnv)
 	oOutput:EndGroupSuite(iTotalTime)
 	oOutput:StaticInfo()
 	
+	self.data.stat = oOutput:GetStaticInfo()
 	self:Fini()
 	return 0
+end
+
+function TestMgr.GetStatInfo(self)
+	return self.data.stat
 end
 
 function TestMgr.countAllCase(self, strFilter)	
@@ -508,4 +518,10 @@ end
 function RunAllTests(oEnv)
 	if not _oTestMgr then return false end
 	return _oTestMgr:Run(oEnv)
+end
+
+-- return total_suite£¬total_case£¬ total_faild
+function GetRunStatInfo()
+	if not _oTestMgr then return end	
+	return _oTestMgr:GetStatInfo()
 end
