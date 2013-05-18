@@ -214,7 +214,7 @@ end
 CAssertMgr = {}
 function CAssertMgr:new(oo)
     local o = oo or {}
-    o.result = false
+    o.result = true
     o.at = {}
     
     o.at[tostring(type(nil)) 	  ] = {ld={}, rd={},}
@@ -267,6 +267,7 @@ function CAssertMgr.GetResult(self)
 end
 
 function CAssertMgr.helpWrapper(self, v1, v2)
+	self.result = false
 	_strCmpField = ""
 	local tmp = self.at[type(v1)]
 	if not tmp then return end
