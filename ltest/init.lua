@@ -430,8 +430,8 @@ function TestMgr.runCase(self, oTmpCase, tSuite, oOutput)
 	end
 	
 	if tSuite.prop.oCls then tSuite.prop.oCls:TearDown() end		
-	oOutput:EndCase(true, bExecResult, iItemTime, oTmpCase.label)
 	iItemTime = os.clock() - iItemTime	
+	oOutput:EndCase(true, bExecResult, iItemTime, oTmpCase.label)
 
 	return bExecResult, iItemTime
 end
